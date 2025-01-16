@@ -1,20 +1,25 @@
 // src/pages/ResourcesPage.tsx
 import React, { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2 } from "lucide-react";
+import toast from "react-hot-toast";
+
 import { Resource } from "../types";
 import { resourceAPI } from "../services/api";
-import toast from "react-hot-toast";
 import ResourceForm from "../components/ResourceForm";
 import ConfirmModal from "../components/ConfirmModal";
 
 export default function ResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Create modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  // Edit modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentResource, setCurrentResource] = useState<Resource | null>(null);
 
-  // For ConfirmModal
+  // Confirm delete modal
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [resourceToDelete, setResourceToDelete] = useState<Resource | null>(
     null
@@ -53,6 +58,8 @@ export default function ResourcesPage() {
       loadResources();
     } catch (error) {
       toast.error("Error al actualizar el recurso");
+    } finally {
+      setCurrentResource(null);
     }
   };
 
@@ -85,7 +92,7 @@ export default function ResourcesPage() {
 
   return (
     <div>
-      {/* Header and Add Button */}
+      {/* Header */}
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
           <h1 className="text-2xl font-semibold text-gray-900">Recursos</h1>
@@ -124,6 +131,7 @@ export default function ResourcesPage() {
               <p className="mt-1 text-sm text-gray-500">
                 {resource.description}
               </p>
+
               <div className="mt-4 flex items-center justify-between">
                 <span
                   className={`px-2 py-1 text-xs font-medium rounded-full ${

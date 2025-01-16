@@ -1,44 +1,67 @@
-import React, { useState, useEffect } from 'react';
-import { Reservation, Resource, User } from '../types';
-import Modal from './Modal';
-import { resourceAPI, userAPI } from '../services/api';
+import React, { useState, useEffect } from "react";
+import { Reservation, Resource, User } from "../types";
+import Modal from "./Modal";
+import { resourceAPI, userAPI } from "../services/api";
 
 interface ReservationFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: Omit<Reservation, 'id'>) => Promise<void>;
+  onSubmit: (data: Omit<Reservation, "id">) => Promise<void>;
+  initialData?: Omit<Reservation, "id">; // Optional for editing
 }
 
-export default function ReservationForm({ isOpen, onClose, onSubmit }: ReservationFormProps) {
+export default function ReservationForm({
+  isOpen,
+  onClose,
+  onSubmit,
+  initialData,
+}: ReservationFormProps) {
   const [resources, setResources] = useState<Resource[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [formData, setFormData] = useState({
-    resourceId: '',
-    userId: '',
-    date: '',
-    startTime: '',
-    endTime: '',
-    status: 'pending' as Reservation['status']
+    resourceId: "",
+    userId: "",
+    date: "",
+    startTime: "",
+    endTime: "",
+    status: "pending" as Reservation["status"],
   });
 
+  // Load resources and users only when modal opens
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [resourcesData, usersData] = await Promise.all([
-          resourceAPI.getAll(),
-          userAPI.getAll()
-        ]);
-        setResources(resourcesData);
-        setUsers(usersData);
-      } catch (error) {
-        console.error('Error loading form data:', error);
-      }
-    };
-
     if (isOpen) {
       loadData();
     }
   }, [isOpen]);
+
+  // Populate form if editing, or reset if creating new
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    } else {
+      setFormData({
+        resourceId: "",
+        userId: "",
+        date: "",
+        startTime: "",
+        endTime: "",
+        status: "pending",
+      });
+    }
+  }, [initialData, isOpen]);
+
+  const loadData = async () => {
+    try {
+      const [resourcesData, usersData] = await Promise.all([
+        resourceAPI.getAll(),
+        userAPI.getAll(),
+      ]);
+      setResources(resourcesData);
+      setUsers(usersData);
+    } catch (error) {
+      console.error("Error loading resources or users:", error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,16 +70,26 @@ export default function ReservationForm({ isOpen, onClose, onSubmit }: Reservati
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Nueva reserva">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={initialData ? "Editar reserva" : "Nueva reserva"}
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Resource */}
         <div>
-          <label htmlFor="resourceId" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="resourceId"
+            className="block text-sm font-medium text-gray-700"
+          >
             Recurso
           </label>
           <select
             id="resourceId"
             value={formData.resourceId}
-            onChange={(e) => setFormData({ ...formData, resourceId: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, resourceId: e.target.value })
+            }
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             required
           >
@@ -69,14 +102,20 @@ export default function ReservationForm({ isOpen, onClose, onSubmit }: Reservati
           </select>
         </div>
 
+        {/* User */}
         <div>
-          <label htmlFor="userId" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="userId"
+            className="block text-sm font-medium text-gray-700"
+          >
             Usuario
           </label>
           <select
             id="userId"
             value={formData.userId}
-            onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, userId: e.target.value })
+            }
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             required
           >
@@ -89,8 +128,12 @@ export default function ReservationForm({ isOpen, onClose, onSubmit }: Reservati
           </select>
         </div>
 
+        {/* Date */}
         <div>
-          <label htmlFor="date" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="date"
+            className="block text-sm font-medium text-gray-700"
+          >
             Fecha
           </label>
           <input
@@ -100,40 +143,79 @@ export default function ReservationForm({ isOpen, onClose, onSubmit }: Reservati
             onChange={(e) => setFormData({ ...formData, date: e.target.value })}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             required
-            min={new Date().toISOString().split('T')[0]}
+            min={new Date().toISOString().split("T")[0]}
           />
         </div>
 
+        {/* Start and End Times */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="startTime" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="startTime"
+              className="block text-sm font-medium text-gray-700"
+            >
               Hora inicio
             </label>
             <input
               type="time"
               id="startTime"
               value={formData.startTime}
-              onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, startTime: e.target.value })
+              }
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="endTime" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="endTime"
+              className="block text-sm font-medium text-gray-700"
+            >
               Hora fin
             </label>
             <input
               type="time"
               id="endTime"
               value={formData.endTime}
-              onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, endTime: e.target.value })
+              }
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               required
             />
           </div>
         </div>
 
+        {/* Status */}
+        <div>
+          <label
+            htmlFor="status"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Estado
+          </label>
+          <select
+            id="status"
+            value={formData.status}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                status: e.target.value as Reservation["status"],
+              })
+            }
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            required
+          >
+            <option value="pending">Pendiente</option>
+            <option value="approved">Aprobada</option>
+            <option value="rejected">Rechazada</option>
+            <option value="completed">Completada</option>
+          </select>
+        </div>
+
+        {/* Action buttons */}
         <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
           <button
             type="submit"

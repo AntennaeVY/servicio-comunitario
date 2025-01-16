@@ -1,14 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
-import { User } from '../types';
-import { userAPI } from '../services/api';
-import toast from 'react-hot-toast';
-import UserForm from '../components/UserForm';
+import React, { useState, useEffect } from "react";
+import { Plus, Edit2, Trash2 } from "lucide-react";
+import { User } from "../types";
+import { userAPI } from "../services/api";
+import toast from "react-hot-toast";
+import UserForm from "../components/UserForm";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Create modal
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Edit modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  // Confirm delete modal
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
   useEffect(() => {
     loadUsers();
@@ -19,19 +30,51 @@ export default function UsersPage() {
       const data = await userAPI.getAll();
       setUsers(data);
     } catch (error) {
-      toast.error('Error al cargar los usuarios');
+      toast.error("Error al cargar los usuarios");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleCreateUser = async (data: Omit<User, 'id'>) => {
+  const handleCreateUser = async (data: Omit<User, "id">) => {
     try {
       await userAPI.create(data);
-      toast.success('Usuario creado exitosamente');
+      toast.success("Usuario creado exitosamente");
       loadUsers();
     } catch (error) {
-      toast.error('Error al crear el usuario');
+      toast.error("Error al crear el usuario");
+    }
+  };
+
+  const handleEditUser = async (data: Omit<User, "id">) => {
+    if (!currentUser) return;
+    try {
+      await userAPI.update(currentUser.id, data);
+      toast.success("Usuario actualizado exitosamente");
+      loadUsers();
+    } catch (error) {
+      toast.error("Error al actualizar el usuario");
+    } finally {
+      setCurrentUser(null);
+    }
+  };
+
+  const handleDeleteClick = (user: User) => {
+    setUserToDelete(user);
+    setIsConfirmModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+    try {
+      await userAPI.delete(userToDelete.id);
+      toast.success("Usuario eliminado exitosamente");
+      loadUsers();
+    } catch (error) {
+      toast.error("Error al eliminar el usuario");
+    } finally {
+      setUserToDelete(null);
+      setIsConfirmModalOpen(false);
     }
   };
 
@@ -70,7 +113,8 @@ export default function UsersPage() {
             <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
               <table className="min-w-full divide-y divide-gray-300">
                 <thead className="bg-gray-50">
-                  <tr>                  <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                  <tr>
+                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                       Nombre
                     </th>
                     <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
@@ -106,13 +150,16 @@ export default function UsersPage() {
                         <div className="flex justify-end space-x-2">
                           <button
                             className="text-gray-400 hover:text-gray-500"
-                            onClick={() => {}}
+                            onClick={() => {
+                              setCurrentUser(user);
+                              setIsEditModalOpen(true);
+                            }}
                           >
                             <Edit2 className="h-5 w-5" />
                           </button>
                           <button
                             className="text-gray-400 hover:text-red-500"
-                            onClick={() => {}}
+                            onClick={() => handleDeleteClick(user)}
                           >
                             <Trash2 className="h-5 w-5" />
                           </button>
@@ -127,11 +174,41 @@ export default function UsersPage() {
         </div>
       </div>
 
+      {/* Create User Modal */}
       <UserForm
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleCreateUser}
       />
+
+      {/* Edit User Modal */}
+      {currentUser && (
+        <UserForm
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setCurrentUser(null);
+          }}
+          onSubmit={handleEditUser}
+          initialData={{
+            name: currentUser.name,
+            email: currentUser.email,
+            role: currentUser.role,
+            apartment: currentUser.apartment,
+          }}
+        />
+      )}
+
+      {/* Confirm Delete Modal */}
+      {userToDelete && (
+        <ConfirmModal
+          isOpen={isConfirmModalOpen}
+          onClose={() => setIsConfirmModalOpen(false)}
+          onConfirm={confirmDelete}
+          title="Confirmar eliminación"
+          message={`¿Estás seguro de eliminar al usuario "${userToDelete.name}"? Esta acción no se puede deshacer.`}
+        />
+      )}
     </div>
   );
 }

@@ -1,20 +1,42 @@
-import React, { useState } from 'react';
-import { User } from '../types';
-import Modal from './Modal';
+// src/components/UserForm.tsx
+import React, { useState, useEffect } from "react";
+import Modal from "./Modal";
+import { User } from "../types";
 
 interface UserFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: Omit<User, 'id'>) => Promise<void>;
+  onSubmit: (data: Omit<User, "id">) => Promise<void>;
+  initialData?: Omit<User, "id">; // Optional for editing
 }
 
-export default function UserForm({ isOpen, onClose, onSubmit }: UserFormProps) {
+export default function UserForm({
+  isOpen,
+  onClose,
+  onSubmit,
+  initialData,
+}: UserFormProps) {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    role: 'resident' as User['role'],
-    apartment: ''
+    name: "",
+    email: "",
+    role: "resident" as User["role"],
+    apartment: "",
   });
+
+  useEffect(() => {
+    if (initialData) {
+      // If we have initialData (editing), populate the form
+      setFormData(initialData);
+    } else {
+      // Otherwise (creating new), reset to default
+      setFormData({
+        name: "",
+        email: "",
+        role: "resident",
+        apartment: "",
+      });
+    }
+  }, [initialData, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,10 +45,17 @@ export default function UserForm({ isOpen, onClose, onSubmit }: UserFormProps) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Agregar usuario">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={initialData ? "Editar usuario" : "Agregar usuario"}
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="name"
+            className="block text-sm font-medium text-gray-700"
+          >
             Nombre
           </label>
           <input
@@ -40,27 +69,37 @@ export default function UserForm({ isOpen, onClose, onSubmit }: UserFormProps) {
         </div>
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700"
+          >
             Email
           </label>
           <input
             type="email"
             id="email"
             value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, email: e.target.value })
+            }
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             required
           />
         </div>
 
         <div>
-          <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="role"
+            className="block text-sm font-medium text-gray-700"
+          >
             Rol
           </label>
           <select
             id="role"
             value={formData.role}
-            onChange={(e) => setFormData({ ...formData, role: e.target.value as User['role'] })}
+            onChange={(e) =>
+              setFormData({ ...formData, role: e.target.value as User["role"] })
+            }
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           >
             <option value="resident">Residente</option>
@@ -70,14 +109,19 @@ export default function UserForm({ isOpen, onClose, onSubmit }: UserFormProps) {
         </div>
 
         <div>
-          <label htmlFor="apartment" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="apartment"
+            className="block text-sm font-medium text-gray-700"
+          >
             Apartamento
           </label>
           <input
             type="text"
             id="apartment"
             value={formData.apartment}
-            onChange={(e) => setFormData({ ...formData, apartment: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, apartment: e.target.value })
+            }
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             required
           />
